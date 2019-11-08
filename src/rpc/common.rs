@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 
 use super::Error;
 use crate::util;
+use crate::util::{ChainID};
 use serde_json::Value;
 
 /// Trait to access a common chain name and id params
 ///
 pub trait CommonChainParams {
-    fn get_chain(&self) -> String;
     fn get_chain_id(&self) -> Option<usize>;
 }
 
@@ -26,30 +26,16 @@ pub trait CommonChainParams {
 ///
 /// Return `Error` if parameters does not match
 ///
-pub fn extract_chain_params(p: &dyn CommonChainParams) -> Result<(String, u8), Error> {
-    let name_param = p.get_chain();
+pub fn extract_chain_params(p: &dyn CommonChainParams) -> Result<(String, ChainID), Error> {
     let id_param = p.get_chain_id();
-    let id: u8;
+    let id: ChainID;
     let name: String;
-
-    if !name_param.is_empty() && id_param.is_some() {
-        id = check_chain_name(&name_param)?;
-        name = check_chain_id(id_param.unwrap() as u8)?;
-        if (id_param.unwrap() as u8) != id {
-            return Err(Error::InvalidDataFormat(format!(
-                "Inconsistent chain name: {} and chain id: {}",
-                name_param, id
-            )));
-        }
-    } else if !name_param.is_empty() {
-        name = name_param.clone();
-        id = check_chain_name(&name_param)?;
-    } else if id_param.is_some() {
-        id = id_param.unwrap() as u8;
-        name = check_chain_id(id)?;
+    if id_param.is_some() {
+        id = id_param.unwrap() as ChainID;
+        name = id.to_string();
     } else {
         return Err(Error::InvalidDataFormat(
-            "Required chain name or chain id parameter".to_string(),
+            "Required chain id parameter".to_string(),
         ));
     }
 
@@ -216,8 +202,6 @@ pub struct ListAccountAccount {
 #[derive(Deserialize, Default, Debug)]
 pub struct ListAccountsAdditional {
     #[serde(default)]
-    pub chain: String,
-    #[serde(default)]
     pub chain_id: Option<usize>,
     #[serde(default)]
     pub show_hidden: bool,
@@ -226,10 +210,6 @@ pub struct ListAccountsAdditional {
 }
 
 impl CommonChainParams for ListAccountsAdditional {
-    fn get_chain(&self) -> String {
-        self.chain.clone()
-    }
-
     fn get_chain_id(&self) -> Option<usize> {
         self.chain_id
     }
@@ -243,15 +223,10 @@ pub struct SelectedAccount {
 #[derive(Deserialize, Default, Debug)]
 pub struct CommonAdditional {
     #[serde(default)]
-    pub chain: String,
-    #[serde(default)]
     pub chain_id: Option<usize>,
 }
 
 impl CommonChainParams for CommonAdditional {
-    fn get_chain(&self) -> String {
-        self.chain.clone()
-    }
 
     fn get_chain_id(&self) -> Option<usize> {
         self.chain_id
@@ -275,18 +250,12 @@ pub struct SignTxTransaction {
 #[derive(Deserialize, Default, Debug)]
 pub struct SignTxAdditional {
     #[serde(default)]
-    pub chain: String,
-    #[serde(default)]
     pub chain_id: Option<usize>,
     #[serde(default)]
     pub hd_path: Option<String>,
 }
 
 impl CommonChainParams for SignTxAdditional {
-    fn get_chain(&self) -> String {
-        self.chain.clone()
-    }
-
     fn get_chain_id(&self) -> Option<usize> {
         self.chain_id
     }
@@ -316,43 +285,18 @@ mod tests {
     #[test]
     fn should_extract_chain_params() {
         let params = CommonAdditional {
-            chain: "etc".to_string(),
             chain_id: Some(61),
         };
 
         let (name, id) = extract_chain_params(&params).unwrap();
-        assert_eq!(name, "etc");
         assert_eq!(id, 61);
+        assert_eq!(name, "61");
     }
 
-    #[test]
-    fn should_check_empty_chain_name() {
-        let params = CommonAdditional {
-            chain: "".to_string(),
-            chain_id: Some(61),
-        };
-
-        let (name, id) = extract_chain_params(&params).unwrap();
-        assert_eq!(name, "etc");
-        assert_eq!(id, 61);
-    }
-
-    #[test]
-    fn should_check_empty_chain_id() {
-        let params = CommonAdditional {
-            chain: "etc".to_string(),
-            chain_id: None,
-        };
-
-        let (name, id) = extract_chain_params(&params).unwrap();
-        assert_eq!(name, "etc");
-        assert_eq!(id, 61);
-    }
 
     #[test]
     fn should_check_empty_chain_params() {
         let params = CommonAdditional {
-            chain: "".to_string(),
             chain_id: None,
         };
 

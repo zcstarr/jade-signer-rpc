@@ -366,6 +366,7 @@
         {
           "name": "dataToSign",
           "description": "data to sign",
+          "required": true,
           "summary": "sign data",
           "schema": {
             "$ref": "#/components/schemas/HexString"
@@ -379,7 +380,8 @@
           "description": "passphrase to keyfile",
           "schema": {
             "$ref": "#/components/schemas/Passphrase"
-          }
+          },
+          "required": true
         },
         {
           "$ref": "#/components/contentDescriptors/Additional"
@@ -409,31 +411,22 @@
         "title": "additionalParams",
         "type": "object",
         "properties": {
-          "chain": {
-            "title": "chain",
-            "description": "chain name, by default etc, other possible variant morden.",
-            "type": "string",
-            "enum": [
-              "etc",
-              "morden"
-            ]
-          },
           "chain_id": {
             "title": "chainId",
             "description": "Chain id number, by default for mainnet it equals 61.",
-            "type": "number"
+            "type": "integer"
           },
           "show_hidden": {
             "title": "showHidden",
             "description": "show hidden accounts",
             "type": "boolean"
           }
-        }
+        },
+        "required": ["chain_id"]
       },
       "Account": {
         "required": [
           "name",
-          "description",
           "address",
           "is_hidden"
         ],
@@ -472,7 +465,7 @@
         "type": "object",
         "properties": {
           "version": {
-            "type": "number"
+            "type": "string"
           },
           "id": {
             "type": "string"
@@ -507,28 +500,31 @@
                 "properties": {
                   "dklen": {
                     "title": "dklen",
-                    "type": "number"
+                    "type": "integer"
                   },
                   "salt": {
                     "type": "string"
                   },
                   "n": {
-                    "type": "number"
+                    "type": "integer"
                   },
                   "r": {
-                    "type": "number"
+                    "type": "integer"
                   },
                   "p": {
-                    "type": "number"
+                    "type": "integer"
                   }
-                }
+                },
+                "required": ["dklen", "salt", "n", "r", "p"]
               },
               "mac": {
                 "type": "string"
               }
-            }
+            },
+            "required": ["kdfparams", "kdf", "cipher", "cipherparams", "ciphertext", "mac"]
           }
-        }
+        }, 
+        "required": ["crypto", "address", "id", "version"]
       },
       "Nonce": {
         "title": "nonce",

@@ -1,8 +1,8 @@
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
 use super::util::{keccak256, to_arr, KECCAK256_BYTES};
-use super::Address;
-use super::Error;
+use crate::Address;
+use crate::Error;
 use crate::util::os_random;
 use hex;
 use rand::{Rng, RngCore};
@@ -162,9 +162,8 @@ impl Into<SecretKey> for PrivateKey {
 }
 
 impl str::FromStr for PrivateKey {
-    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Error> {
         if s.len() != PRIVATE_KEY_BYTES * 2 && !s.starts_with("0x") {
             return Err(Error::InvalidHexLength(s.to_string()));
         }

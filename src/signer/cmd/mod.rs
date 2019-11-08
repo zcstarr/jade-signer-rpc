@@ -17,7 +17,8 @@ use crate::storage::{default_path, StorageController, StorageType};
 
 type ExecResult = Result<(), Error>;
 
-const DEFAULT_CHAIN_NAME: &str = "mainnet";
+/// Specifies ethereum classsic mainnet as default
+const DEFAULT_CHAIN_NAME: &str = "61";
 
 /// Create new command executor
 pub fn execute(matches: &ArgMatches) -> ExecResult {
@@ -42,7 +43,7 @@ pub fn execute(matches: &ArgMatches) -> ExecResult {
         StorageType::RocksDB
     };
 
-    let storage_ctrl = StorageController::new(base_path, storage_type)?;
+    let storage_ctrl = StorageController::new(base_path, storage_type);
 
     log::info!("Starting Jade Signer - v{}", crate::version());
     let host = matches.value_of("host").unwrap_or_default();

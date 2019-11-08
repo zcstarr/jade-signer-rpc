@@ -184,10 +184,10 @@ pub fn new_account(
     sec: KdfDepthLevel,
     storage: &Arc<Mutex<StorageController>>,
 ) -> Result<String, Error> {
-    let storage_ctrl = storage.lock().unwrap();
+    let mut storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
     let (chain, _chain_id) = extract_chain_params(&additional)?;
-    let storage = storage_ctrl.get_keystore(&chain)?;
+    let storage = storage_ctrl.upsert_keystore(chain.as_ref())?;
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphrase".to_string()));
     }

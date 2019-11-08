@@ -24,6 +24,7 @@ use std::convert::From;
 use std::str::FromStr;
 use std::{cmp, fmt};
 use uuid::Uuid;
+use jade_signer_client::{Keyfile as KeyfileClient};
 
 /// Key derivation function salt length in bytes
 pub const KDF_SALT_BYTES: usize = 32;
@@ -49,7 +50,7 @@ pub struct KeyFile {
     pub address: Address,
 
     /// UUID v4
-    pub uuid: Uuid,
+    pub id: Uuid,
 
     ///
     pub crypto: CryptoType,
@@ -213,6 +214,17 @@ impl Default for KeyFile {
     }
 }
 
+impl From<KeyfileClient> for KeyFile {
+    fn from(keyfile: KeyfileClient)-> Self {
+        KeyFile {
+            address: Address::from_str(keyfile.address).unwrap(),
+            visible: visible: Some(true),
+            name: None,
+            description: None,
+            id: keyfile.id,
+        }
+    }
+}
 impl From<Uuid> for KeyFile {
     fn from(uuid: Uuid) -> Self {
         KeyFile {

@@ -80,12 +80,10 @@ pub fn default_path() -> PathBuf {
 /// # Arguments:
 ///
 /// * `base_path` - base folder for storage
-/// * `chain` - chain name
 /// * `folder` - destination folder
 ///
-pub fn build_path(base_path: &Path, chain: &str, folder: &str) -> PathBuf {
+pub fn build_path(base_path: &Path, folder: &str) -> PathBuf {
     let mut path = PathBuf::from(base_path);
-    path.push(chain);
     path.push(folder);
     path
 }
@@ -117,22 +115,4 @@ where
         }
         StorageType::Filesystem => Ok(Box::new(FsStorage::new(path))),
     }
-}
-
-/// Creates specific type of `Contract` storage (database or filesystem)
-///
-/// # Arguments:
-///
-/// * `path` - path for `Contract` storage
-///
-pub fn build_contract_storage<P>(path: P) -> Result<Box<ContractStorage>, KeystoreError>
-where
-    P: AsRef<Path>,
-{
-    // TODO: implement DB storage. Add conditional compilation.
-    let mut p = PathBuf::new();
-    p.push(path);
-    fs::create_dir_all(&p)?;
-
-    Ok(Box::new(ContractStorage::new(p)))
 }

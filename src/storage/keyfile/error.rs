@@ -4,15 +4,18 @@ use crate::keystore::SerializeError;
 use rocksdb;
 use serde_json;
 
+use failure::{Fail};
 use std::{error, fmt, io, str};
+use jsonrpc_core::{Error as JSONRpcError,ErrorCode as JSONRpcErrorCode};
 
-///
-#[derive(Debug)]
+#[derive(Debug, Fail)]
 pub enum KeystoreError {
     /// General storage error
+    #[fail(display = "KeyFile storage error: {}", _0)]
     StorageError(String),
 
-    /// `KeyFile` not found
+    /// `KeyFile` not found  
+    #[fail(display = "Missing KeyFile for address: {}", _0)]
     NotFound(String),
 }
 
@@ -46,23 +49,19 @@ impl From<io::Error> for KeystoreError {
     }
 }
 
+impl From<KeystoreError> for jsonrpc_core::Error {
+    fn from(err: KeystoreError) -> JSONRpcError {
+        JSONRpcError { code: JSONRpcErrorCode::InternalError, 
+                      message: err.to_string(), 
+                      data: None} 
+    }
+}
+
 impl fmt::Display for KeystoreError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             KeystoreError::StorageError(ref str) => write!(f, "KeyFile storage error: {}", str),
             KeystoreError::NotFound(ref str) => write!(f, "Missing KeyFile for address: {}", str),
-        }
-    }
-}
-
-impl error::Error for KeystoreError {
-    fn description(&self) -> &str {
-        "KeyFile storage error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
-            _ => None,
         }
     }
 }

@@ -1,7 +1,8 @@
 //! # Account address (20 bytes)
 
 use super::util::to_arr;
-use super::Error;
+use crate::{Error as CoreError};
+use failure::{Error};
 use hex;
 use std::str::FromStr;
 use std::{fmt, ops};
@@ -26,9 +27,9 @@ impl Address {
     /// let addr = jade_signer_rs::Address::try_from(&[0u8; jade_signer_rs::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
-    pub fn try_from(data: &[u8]) -> Result<Self, Error> {
+    pub fn try_from(data: &[u8]) -> Result<Self, CoreError> {
         if data.len() != ADDRESS_BYTES {
-            return Err(Error::InvalidLength(data.len()));
+            return Err(CoreError::InvalidLength(data.len()));
         }
 
         Ok(Address(to_arr(data)))
@@ -56,11 +57,11 @@ impl From<[u8; ADDRESS_BYTES]> for Address {
 }
 
 impl FromStr for Address {
-    type Err = Error;
+    type Err = CoreError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, CoreError> {
         if s.len() != ADDRESS_BYTES * 2 && !s.starts_with("0x") {
-            return Err(Error::InvalidHexLength(s.to_string()));
+            return Err(CoreError::InvalidHexLength(s.to_string()));
         }
 
         let value = if s.starts_with("0x") {

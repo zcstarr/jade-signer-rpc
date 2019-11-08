@@ -25,6 +25,9 @@ const ETC: &str = "etc";
 const MAINNET: &str = "mainnet";
 const ETC_MORDEN: &str = "etc-morden";
 
+// Define chainID Type size parameter
+pub type ChainID = u64;
+
 /// Convert `self` into hex string
 pub trait ToHex {
     /// converts to hex

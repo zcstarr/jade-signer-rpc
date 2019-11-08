@@ -10,7 +10,7 @@ use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{self, StorageController};
 use super::util::{align_bytes, to_arr, to_even_str, to_u64, trim_hex, ToHex};
-use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
+use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params, Result};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::Level;
 use serde::de::DeserializeOwned;
@@ -18,6 +18,27 @@ use serde::Serialize;
 use serde_json::{self, Value};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use jade_signer_client::{RpcJadeSignerJSONRPCAPI, Address, Additional, Keyfile};
+
+struct RpcServer {
+  storage_ctrl: Arc<Mutex<StorageController>>,
+    
+
+}
+
+impl RpcJadeSignerJSONRPCAPI for RpcServer {
+        fn signer_importAccount(&mut self, keyfile: Keyfile, additional: Additional) -> Result<Address> {
+            let storage_clone = Arc::clone(&self.storage_ctrl);
+            let storage_ctrl = storage_clone.lock().unwrap();
+            let storage = storage_ctrl.keyfile_storage;
+            storage.put(&keyfile);
+            log::debug!("Account imported: {}", keyfile.address);
+            Ok(format!("{}", keyfile.address))
+        }
+
+    }
+
+
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
@@ -52,6 +73,7 @@ where
 pub fn start(addr: &SocketAddr, storage_ctrl: StorageController, sec_level: Option<KdfDepthLevel>) {
     let sec_level = sec_level.unwrap_or_default();
     let storage_ctrl = Arc::new(Mutex::new(storage_ctrl));
+
 
     let mut io = IoHandler::default();
 
@@ -108,6 +130,7 @@ pub fn start(addr: &SocketAddr, storage_ctrl: StorageController, sec_level: Opti
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
         io.add_method("signer_exportAccount", move |p: Params| {
+            log::debug!("signer ------------- {:?}", p);
             wrapper(serves::export_account(parse(p)?, &storage_ctrl))
         });
     }

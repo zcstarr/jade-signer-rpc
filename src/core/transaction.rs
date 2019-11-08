@@ -1,7 +1,7 @@
 //! # Account transaction
 
-use super::util::{keccak256, trim_bytes, RLPList, WriteRLP, KECCAK256_BYTES};
-use super::{Address, Error, PrivateKey, Signature};
+use super::util::{keccak256, trim_bytes, RLPList, WriteRLP, KECCAK256_BYTES, ChainID};
+use crate::{Address, Error, PrivateKey, Signature};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -27,25 +27,28 @@ pub struct Transaction {
 
 impl Transaction {
     /// Sign transaction data with provided private key
-    pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
+    pub fn to_signed_raw(&self, pk: PrivateKey, chain: ChainID) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash(self.hash(chain))?;
         Ok(self.raw_from_sig(chain, &sig))
     }
 
     /// RLP packed signed transaction from provided `Signature`
-    pub fn raw_from_sig(&self, chain: u8, sig: &Signature) -> Vec<u8> {
+    pub fn raw_from_sig(&self, chain: ChainID, sig: &Signature) -> Vec<u8> {
         let mut rlp = self.to_rlp_raw(None);
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         // Can be already applied by HD wallet.
         // TODO: refactor to avoid this check
-        let mut v = u16::from(sig.v);
-        let stamp = u16::from(chain * 2 + 35 - 27);
-        if v + stamp <= 0xff {
+        let mut v = u64::from(sig.v);
+        let stamp = u64::from(chain * 2 + 35 - 27);
+         // check for overflow
+        /*if v + stamp <= 0xff {
             v += stamp;
-        }
+        }*/
+        v += stamp;
+        
 
-        rlp.push(&(v as u8));
+        rlp.push(&(v as u64));
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
@@ -57,14 +60,14 @@ impl Transaction {
 
     /// RLP packed transaction
     #[allow(dead_code)]
-    pub fn to_rlp(&self, chain_id: Option<u8>) -> Vec<u8> {
+    pub fn to_rlp(&self, chain_id: Option<ChainID>) -> Vec<u8> {
         let mut buf = Vec::new();
         self.to_rlp_raw(chain_id).write_rlp(&mut buf);
 
         buf
     }
 
-    fn to_rlp_raw(&self, chain_id: Option<u8>) -> RLPList {
+    fn to_rlp_raw(&self, chain_id: Option<ChainID>) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
@@ -88,7 +91,7 @@ impl Transaction {
         data
     }
 
-    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
+    fn hash(&self, chain: ChainID) -> [u8; KECCAK256_BYTES] {
         let rlp = self.to_rlp_raw(Some(chain));
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
@@ -137,6 +140,22 @@ mod tests {
         ));
 
         let hex = hex::encode(tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap());
+        assert_eq!(
+            hex.len(),
+            "f86d\
+             808504e3b29200825208\
+             94\
+             3f4e0668c20e100d7c2a27d4b177ac65b2875d26\
+             88\
+             0de0b6b3a7640000\
+             80\
+             81\
+             9e\
+             a0\
+             4ca75f697cf61daf1980dcd4f4460450e9e07b3c1b16ad1224b1a46e7e5c53b2\
+             a0\
+             59648e92e975d9cdf5d12698d7267595c087e83e9598639e13525f6fe7c047f1".len()
+        );
         assert_eq!(
             hex,
             "f86d\

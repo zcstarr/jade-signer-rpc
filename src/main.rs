@@ -39,7 +39,7 @@ use std::process::*;
 fn main() {
     let yaml = clap::load_yaml!("../cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
-
+    
     match matches.occurrences_of("verbose") {
         0 => env::set_var("RUST_LOG", "error"),
         1 => env::set_var("RUST_LOG", "info"),
